@@ -9,6 +9,14 @@
 
 # COMMAND ----------
 
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType
 
 # COMMAND ----------
@@ -28,7 +36,7 @@ races_schema = StructType(fields= [StructField("raceId", IntegerType(), False),
 races_df = spark.read \
 .option("header", True) \
 .schema(races_schema) \
-.csv("/mnt/formula1joaodl/raw/races.csv")
+.csv(f"{raw_folder_path}/races.csv")
 
 # COMMAND ----------
 
@@ -65,8 +73,11 @@ from pyspark.sql.functions import current_timestamp, lit, to_timestamp, concat
 
 # COMMAND ----------
 
-races_final_df = races_renamed_df.withColumn("race_timestamp", to_timestamp(concat(col("date"), lit(" "), col("time")), "yyyy-MM-dd HH:mm:ss")) \
-.withColumn("ingestion_date", current_timestamp())
+races_final_df = races_renamed_df.withColumn("race_timestamp", to_timestamp(concat(col("date"), lit(" "), col("time")), "yyyy-MM-dd HH:mm:ss"))
+
+# COMMAND ----------
+
+races_final_df = add_ingestion_date(races_final_df)
 
 # COMMAND ----------
 
@@ -75,11 +86,11 @@ races_final_df = races_renamed_df.withColumn("race_timestamp", to_timestamp(conc
 
 # COMMAND ----------
 
-races_final_df.write.mode("overwrite").partitionBy('race_year').parquet("/mnt/formula1joaodl/processed/races")
+races_final_df.write.mode("overwrite").partitionBy('race_year').parquet(f"{processed_folder_path}/races")
 
 # COMMAND ----------
 
-display(spark.read.parquet('/mnt/formula1joaodl/processed/races'))
+display(spark.read.parquet(f"{processed_folder_path}/races"))
 
 # COMMAND ----------
 
